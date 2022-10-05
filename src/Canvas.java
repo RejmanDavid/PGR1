@@ -15,6 +15,8 @@ public class Canvas {
     private int x = 1;
     private int y = 1;
     private int pixelSize = 10;
+    private int lineOriginX;
+    private int lineOriginY;
     int color = 0xFFFFFF;
     public Canvas(int width, int height) {
         frame = new JFrame();
@@ -27,6 +29,8 @@ public class Canvas {
         frame.setLocation((dim.width-width)/2, (dim.height-height)/2);
 
         img = new BufferedImage(width,height,BufferedImage.TYPE_INT_RGB);
+        lineOriginX = width/2/pixelSize;
+        lineOriginY = height/2/pixelSize;
         //img.setRGB(0,0,/*width,height,new int[] {*/0xFFFFFF/*},0,1*/);
         panel = new JPanel(){
             @Override
@@ -43,12 +47,22 @@ public class Canvas {
 
         panel.requestFocus();
         panel.requestFocusInWindow();
+        panel.addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                super.mouseMoved(e);
+                if(x/pixelSize>frame.getWidth()||y/pixelSize>frame.getHeight()||x<0||y<0){return;}
+                DrawLine(lineOriginX,lineOriginY,e.getX()/pixelSize,e.getY()/pixelSize);
+            }
+        });
         panel.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseMoved(MouseEvent e) {//TODO fix
-                super.mouseMoved(e);
-                System.out.println("event");
-                DrawLine(img.getWidth()/2/pixelSize,img.getWidth()/2/pixelSize,e.getX(),e.getY());
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
+
+                lineOriginX = e.getX()/pixelSize;
+                lineOriginY = e.getY()/pixelSize;
+                DrawLine(lineOriginX,lineOriginY,e.getX()/pixelSize,e.getY()/pixelSize);
             }
         });
         panel.addKeyListener(new KeyAdapter() {
@@ -125,10 +139,47 @@ public class Canvas {
         img = new BufferedImage(img.getWidth(),img.getHeight(),BufferedImage.TYPE_INT_RGB);
     }
     private void DrawLine(int x1,int y1,int x2, int y2){
-        //System.out.println(x1);
+
+        int w1,w2,h1,h2;
+
         Clear();
-        PaintPixel(x1,y1);
-        PaintPixel(x2,y2);
+
+        if((x2-x1)>(y2-y1)){
+            if((x1-x2)<(y2-y1)){
+                for (int i = x1; i <= x2; i++){
+                    double dist = ((double)i-x1)/(x2-(double)x1);
+                    int addition = (int)((y2-y1)*dist);
+                    PaintPixel(i,y1+addition);
+                    //System.out.println(i+" "+dist);
+                }
+            }else{
+                for (int i = y1; i > y2; i--){
+                    double dist = ((double)i-y1)/(y2-(double)y1);
+                    int addition = (int)((x2-x1)*dist);
+                    PaintPixel(x1+addition,i);
+                }
+            }
+        }else{
+            int tempx = x1; int tempy = y1;
+            x1 = x2; y1 = y2;
+            x2 = tempx; y2 = tempy;
+
+            if((x1-x2)<(y2-y1)){
+                for (int i = x1; i <= x2; i++){
+                    double dist = ((double)i-x1)/(x2-(double)x1);
+                    int addition = (int)((y2-y1)*dist);
+                    PaintPixel(i,y1+addition);
+                    //System.out.println(i+" "+dist);
+                }
+            }else{
+                for (int i = y1; i >= y2; i--){
+                    double dist = ((double)i-y1)/(y2-(double)y1);
+                    int addition = (int)((x2-x1)*dist);
+                    PaintPixel(x1+addition,i);
+                }
+            }
+        }
+
         panel.repaint();
     }
 }
